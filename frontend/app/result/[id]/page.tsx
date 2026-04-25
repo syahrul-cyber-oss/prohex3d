@@ -1,10 +1,24 @@
 "use client";
 
+/* eslint-disable @next/next/no-img-element */
+
 import Link from "next/link";
-import { Suspense, useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
+import {
+  createElement,
+  Suspense,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { Canvas } from "@react-three/fiber";
-import { Bounds, Environment, Html, OrbitControls, useGLTF } from "@react-three/drei";
+import {
+  Bounds,
+  Environment,
+  Html,
+  OrbitControls,
+  useGLTF,
+} from "@react-three/drei";
 
 type ModelOutput = {
   filename: string;
@@ -12,6 +26,7 @@ type ModelOutput = {
   url: string;
   downloadUrl: string;
   size?: number;
+  sizeKB?: number;
   sizeMB?: number;
   ext?: string;
   createdAt?: string;
@@ -42,7 +57,7 @@ type ApiResponse<T> = {
 function LoadingBox() {
   return (
     <Html center>
-      <div className="rounded-xl border border-white/10 bg-black/70 px-4 py-3 text-sm text-slate-200">
+      <div className="rounded-xl border border-white/10 bg-black/80 px-4 py-3 text-sm font-semibold text-slate-200">
         Loading model...
       </div>
     </Html>
@@ -54,7 +69,7 @@ function ModelScene({ url }: { url: string }) {
 
   return (
     <Bounds fit clip observe margin={1.2}>
-      <primitive object={gltf.scene} />
+      {createElement("primitive", { object: gltf.scene })}
     </Bounds>
   );
 }
@@ -84,6 +99,10 @@ export default function ResultDetailPage() {
     try {
       setLoading(true);
       setError("");
+
+      if (!id) {
+        throw new Error("Model ID tidak ditemukan.");
+      }
 
       const response = await fetch(`${apiBaseUrl}/api/generate/${id}`, {
         method: "GET",
@@ -154,6 +173,7 @@ export default function ResultDetailPage() {
             <p className="text-xs uppercase tracking-[0.25em] text-slate-400">
               Status
             </p>
+
             <p className="mt-1 text-lg font-semibold text-cyan-300">
               {loading ? "Loading" : model?.status || "Unknown"}
             </p>
@@ -195,6 +215,7 @@ export default function ResultDetailPage() {
               <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <h2 className="text-xl font-bold">Preview 3D</h2>
+
                   <p className="mt-1 text-sm text-slate-400">
                     Rotate, zoom, dan pan model di area preview.
                   </p>
@@ -214,7 +235,12 @@ export default function ResultDetailPage() {
 
               <div className="h-[520px] overflow-hidden rounded-3xl border border-white/10 bg-black/40">
                 {modelUrl ? (
-                  <Canvas camera={{ position: [3, 2, 4], fov: 45 }}>
+                  <Canvas
+                    camera={{
+                      position: [3, 2, 4],
+                      fov: 45,
+                    }}
+                  >
                     <ambientLight intensity={1.2} />
                     <directionalLight position={[5, 5, 5]} intensity={1.5} />
 
@@ -226,6 +252,8 @@ export default function ResultDetailPage() {
                     <OrbitControls
                       enableDamping
                       dampingFactor={0.08}
+                      enableZoom
+                      enablePan
                       makeDefault
                     />
                   </Canvas>
@@ -238,8 +266,8 @@ export default function ResultDetailPage() {
 
               {model.provider === "demo" && (
                 <div className="mt-4 rounded-2xl border border-yellow-400/20 bg-yellow-400/10 p-4 text-sm leading-6 text-yellow-100">
-                  Mode saat ini masih demo. File GLB bisa kosong, jadi preview
-                  3D mungkin tidak menampilkan bentuk objek asli.
+                  Mode saat ini masih demo. File GLB belum dibuat dari AI 3D
+                  asli, jadi hasilnya hanya untuk mengetes alur sistem.
                 </div>
               )}
             </section>
@@ -253,6 +281,7 @@ export default function ResultDetailPage() {
                     <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
                       Model ID
                     </p>
+
                     <p className="mt-2 break-all text-sm font-semibold text-cyan-300">
                       {model.id}
                     </p>
@@ -262,6 +291,7 @@ export default function ResultDetailPage() {
                     <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
                       Provider
                     </p>
+
                     <p className="mt-2 text-sm font-semibold text-slate-200">
                       {model.provider}
                     </p>
@@ -271,20 +301,36 @@ export default function ResultDetailPage() {
                     <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
                       Status
                     </p>
+
                     <p className="mt-2 text-sm font-semibold text-slate-200">
                       {model.status}
                     </p>
                   </div>
 
                   {model.outputModel && (
-                    <div className="rounded-2xl border border-white/10 bg-black/25 p-4">
-                      <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
-                        File Model
-                      </p>
-                      <p className="mt-2 break-all text-sm font-semibold text-slate-200">
-                        {model.outputModel.filename}
-                      </p>
-                    </div>
+                    <>
+                      <div className="rounded-2xl border border-white/10 bg-black/25 p-4">
+                        <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
+                          File Model
+                        </p>
+
+                        <p className="mt-2 break-all text-sm font-semibold text-slate-200">
+                          {model.outputModel.filename}
+                        </p>
+                      </div>
+
+                      <div className="rounded-2xl border border-white/10 bg-black/25 p-4">
+                        <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
+                          Ukuran File
+                        </p>
+
+                        <p className="mt-2 text-sm font-semibold text-slate-200">
+                          {typeof model.outputModel.sizeKB === "number"
+                            ? `${model.outputModel.sizeKB} KB`
+                            : "Tidak tersedia"}
+                        </p>
+                      </div>
+                    </>
                   )}
                 </div>
 

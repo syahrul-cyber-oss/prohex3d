@@ -2,6 +2,7 @@
 
 import {
   Component,
+  createElement,
   ReactNode,
   Suspense,
   useEffect,
@@ -62,7 +63,7 @@ function EmptyModelBox({ text }: { text: string }) {
           strokeWidth="1.8"
         >
           <path d="M12 3 4 7l8 4 8-4-8-4Z" />
-          <path d="M4 7v10l8 4 8-4V7" />
+          <path d="M4 7v10l8 4 8-4 8-4V7" />
           <path d="M12 11v10" />
         </svg>
       </div>
@@ -114,9 +115,21 @@ function LoadedModel({ url }: { url: string }) {
 
   return (
     <Bounds fit clip observe margin={1.2}>
-      <primitive object={gltf.scene} />
+      {createElement("primitive", { object: gltf.scene })}
     </Bounds>
   );
+}
+
+function getFileFormat(filename: string) {
+  const lower = filename.toLowerCase();
+
+  if (lower.endsWith(".glb")) return "GLB";
+  if (lower.endsWith(".gltf")) return "GLTF";
+  if (lower.endsWith(".obj")) return "OBJ";
+  if (lower.endsWith(".fbx")) return "FBX";
+  if (lower.endsWith(".stl")) return "STL";
+
+  return "Model 3D";
 }
 
 export default function ModelViewer({
@@ -239,9 +252,7 @@ export default function ModelViewer({
             <div className="rounded-xl bg-white/5 p-3">
               <p className="text-xs text-slate-500">Format</p>
               <p className="mt-1 text-sm font-semibold text-slate-200">
-                {filename.toLowerCase().endsWith(".glb")
-                  ? "GLB"
-                  : "Model 3D"}
+                {getFileFormat(filename)}
               </p>
             </div>
           </div>
